@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.xml.bind.ValidationException;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
@@ -25,22 +26,29 @@ public class ActorController {
     public ActorController(ActorRepository actorRepository) {
         this.actorRepository = actorRepository;
     }
-    
-//    @GetMapping("/actors")
-//    public List<ActorEntity> getAllActors() {
-//        return actorRepository.findAll();
-//    }
 
     @GetMapping("/actors")
-    public CollectionModel<EntityModel<ActorEntity>> getAllActors() {
-        List<EntityModel<ActorEntity>> actors = actorRepository.findAll().stream()
-                .map(actor -> EntityModel.of(actor,
-                        linkTo(methodOn(ActorController.class).findActorById(actor.getActorId())).withSelfRel(),
-                        linkTo(methodOn(ActorController.class).getAllActors()).withRel("actors")))
-                .collect(Collectors.toList());
+    @ResponseBody
+    public CollectionModel<EntityModel<ActorEntity>> getActorsByName(@RequestParam(required = false, name = "name") String name, Integer id) {
+        if (name == null) {
+            List<EntityModel<ActorEntity>> actors = actorRepository.findAll().stream()
+                    .map(actor -> EntityModel.of(actor,
+                            linkTo(methodOn(ActorController.class).findActorById(actor.getActorId())).withRel("actors")))
+                    .collect(Collectors.toList());
 
-        return CollectionModel.of(actors,
-                linkTo(methodOn(ActorController.class).getAllActors()).withSelfRel());
+            return CollectionModel.of(actors,
+                    linkTo(methodOn(ActorController.class).findActorById(id)).withRel("actors"));
+        } else {
+            List<EntityModel<ActorEntity>> actors = actorRepository.findAll().stream()
+                    .filter(actor -> actor.getFirstName().contains(name.toUpperCase()))
+                    .map(actor -> EntityModel.of(actor,
+                            linkTo(methodOn(ActorController.class).getActorsByName(name, actor.getActorId())).withSelfRel(),
+                            linkTo(methodOn(ActorController.class).findActorById(actor.getActorId())).withRel("actors")))
+                    .collect(Collectors.toList());
+
+            return CollectionModel.of(actors,
+                    linkTo(methodOn(ActorController.class).getActorsByName(name, id)).withSelfRel());
+        }
     }
 
     @GetMapping("/actors/{id}")
@@ -48,21 +56,8 @@ public class ActorController {
         ActorEntity actorEntity = actorRepository.findById(id).orElseThrow(() -> new ActorNotFoundException(id));
         return EntityModel.of(actorEntity,
                 linkTo(methodOn(ActorController.class).findActorById(id)).withSelfRel(),
-                linkTo(methodOn(ActorController.class).getAllActors()).withRel("actors"));
+                linkTo(methodOn(ActorController.class).getActorsByName(actorEntity.getFirstName(), id)).withRel("actors"));
 
-    }
-
-    @GetMapping("/actors/search/{search}")
-    public CollectionModel<EntityModel<ActorEntity>> findActorByFirstName(@PathVariable String search) {
-        List<EntityModel<ActorEntity>> actors = actorRepository.findAll().stream()
-                .filter(actor -> actor.getFirstName().contains(search))
-                .map(actor -> EntityModel.of(actor,
-                        linkTo(methodOn(ActorController.class).findActorByFirstName(search)).withSelfRel(),
-                        linkTo(methodOn(ActorController.class).getAllActors()).withRel("actors")))
-                .collect(Collectors.toList());
-
-        return CollectionModel.of(actors,
-                linkTo(methodOn(ActorController.class).getAllActors()).withSelfRel());
     }
 
     @PostMapping("/actors")
