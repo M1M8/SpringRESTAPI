@@ -1,9 +1,11 @@
 package com.sparta.mm.springrestapi.controller;
 
+import com.sparta.mm.springrestapi.assembler.ActorEntityAssembler;
 import com.sparta.mm.springrestapi.exceptions.ActorNotFoundException;
 import com.sparta.mm.springrestapi.entities.ActorEntity;
 import com.sparta.mm.springrestapi.repositories.ActorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,30 +13,53 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.xml.bind.ValidationException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 public class ActorController {
+
     private final ActorRepository actorRepository;
 
+    private final ActorEntityAssembler actorAssembler;
+
     @Autowired
-    public ActorController(ActorRepository actorRepository) {
+    public ActorController(ActorRepository actorRepository, ActorEntityAssembler actorAssembler) {
         this.actorRepository = actorRepository;
+        this.actorAssembler = actorAssembler;
     }
-    
+
     @GetMapping("/actors")
-    public List<ActorEntity> getAllActors() {
-        return actorRepository.findAll();
+    @ResponseBody
+    public CollectionModel<EntityModel<ActorEntity>> getActorsByName(@RequestParam(required = false, name = "firstName") String firstName, Integer id) {
+        if (firstName == null) {
+            List<EntityModel<ActorEntity>> actors = actorRepository.findAll().stream()
+                    .map(actorAssembler::toModel)
+                    .collect(Collectors.toList());
+
+            return CollectionModel.of(actors,
+                    linkTo(methodOn(ActorController.class).findActorById(id)).withRel("actors"));
+        } else {
+            String firstNameDB = firstName.toUpperCase();
+            List<EntityModel<ActorEntity>> actors = actorRepository.findAll().stream()
+                    .filter(actor -> actor.getFirstName().contains(firstNameDB))
+                    .map(actorAssembler::toModel)
+                    .collect(Collectors.toList());
+
+            return CollectionModel.of(actors,
+                    linkTo(methodOn(ActorController.class).getActorsByName(firstName, id)).withSelfRel());
+        }
     }
 
     @GetMapping("/actors/{id}")
-    public EntityModel<ActorEntity> findActor(@PathVariable Integer id) {
-        ActorEntity actorEntity = actorRepository.findById(id).orElseThrow(() -> new ActorNotFoundException(id));
-        return EntityModel.of(actorEntity,
-                linkTo(methodOn(ActorController.class).getAllActors()).withRel("allActors"),
-                linkTo(methodOn(ActorController.class).findActor(id)).withSelfRel());
+    public EntityModel<ActorEntity> findActorById(@PathVariable Integer id) {
+        ActorEntity actorEntity = actorRepository.findById(id)
+                .orElseThrow(() -> new ActorNotFoundException(id));
+
+        return actorAssembler.toModel(actorEntity);
+
     }
 
     @PostMapping("/actors")
@@ -55,7 +80,7 @@ public class ActorController {
         }
     }
 
-    @DeleteMapping("/actors{id}")
+    @DeleteMapping("/actors/{id}")
     public void deleteActor(@PathVariable("id") Integer id) {
         actorRepository.deleteById(id);
     }
