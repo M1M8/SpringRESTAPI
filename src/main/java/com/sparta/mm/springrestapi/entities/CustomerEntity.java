@@ -1,7 +1,8 @@
 package com.sparta.mm.springrestapi.entities;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Objects;
 
 @Entity
@@ -12,7 +13,7 @@ public class CustomerEntity {
     @Column(name = "customer_id")
     private Integer customerId;
     @Basic
-    @Column(name = "store_id")
+    @Column(name = "store_id", insertable = false, updatable = false)
     private Integer storeId;
     @Basic
     @Column(name = "first_name")
@@ -24,17 +25,27 @@ public class CustomerEntity {
     @Column(name = "email")
     private String email;
     @Basic
-    @Column(name = "address_id")
+    @Column(name = "address_id", insertable = false, updatable = false)
     private Integer addressId;
     @Basic
     @Column(name = "active")
     private Byte active;
     @Basic
     @Column(name = "create_date")
-    private Timestamp createDate;
+    private LocalDate createDate;
     @Basic
     @Column(name = "last_update")
-    private Timestamp lastUpdate;
+    private LocalDate lastUpdate;
+    @ManyToOne
+    @JoinColumn(name = "address_id", referencedColumnName = "address_id", nullable = false)
+    private AddressEntity addressByAddressId;
+    @OneToMany(mappedBy = "customerByCustomerId")
+    private Collection<PaymentEntity> paymentsByCustomerId;
+    @OneToMany(mappedBy = "customerByCustomerId")
+    private Collection<RentalEntity> rentalsByCustomerId;
+    @ManyToOne
+    @JoinColumn(name = "store_id", referencedColumnName = "store_id", nullable = false)
+    private StoreEntity storeByStoreId;
 
     public Integer getCustomerId() {
         return customerId;
@@ -92,19 +103,19 @@ public class CustomerEntity {
         this.active = active;
     }
 
-    public Timestamp getCreateDate() {
+    public LocalDate getCreateDate() {
         return createDate;
     }
 
-    public void setCreateDate(Timestamp createDate) {
+    public void setCreateDate(LocalDate createDate) {
         this.createDate = createDate;
     }
 
-    public Timestamp getLastUpdate() {
+    public LocalDate getLastUpdate() {
         return lastUpdate;
     }
 
-    public void setLastUpdate(Timestamp lastUpdate) {
+    public void setLastUpdate(LocalDate lastUpdate) {
         this.lastUpdate = lastUpdate;
     }
 
@@ -119,5 +130,37 @@ public class CustomerEntity {
     @Override
     public int hashCode() {
         return Objects.hash(customerId, storeId, firstName, lastName, email, addressId, active, createDate, lastUpdate);
+    }
+
+    public AddressEntity getAddressByAddressId() {
+        return addressByAddressId;
+    }
+
+    public void setAddressByAddressId(AddressEntity addressByAddressId) {
+        this.addressByAddressId = addressByAddressId;
+    }
+
+    public Collection<PaymentEntity> getPaymentsByCustomerId() {
+        return paymentsByCustomerId;
+    }
+
+    public void setPaymentsByCustomerId(Collection<PaymentEntity> paymentsByCustomerId) {
+        this.paymentsByCustomerId = paymentsByCustomerId;
+    }
+
+    public Collection<RentalEntity> getRentalsByCustomerId() {
+        return rentalsByCustomerId;
+    }
+
+    public void setRentalsByCustomerId(Collection<RentalEntity> rentalsByCustomerId) {
+        this.rentalsByCustomerId = rentalsByCustomerId;
+    }
+
+    public StoreEntity getStoreByStoreId() {
+        return storeByStoreId;
+    }
+
+    public void setStoreByStoreId(StoreEntity storeByStoreId) {
+        this.storeByStoreId = storeByStoreId;
     }
 }

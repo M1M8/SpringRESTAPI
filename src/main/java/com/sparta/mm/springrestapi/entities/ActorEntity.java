@@ -1,8 +1,8 @@
 package com.sparta.mm.springrestapi.entities;
 
 import javax.persistence.*;
-import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Objects;
 
 @Entity
@@ -21,6 +21,8 @@ public class ActorEntity {
     @Basic
     @Column(name = "last_update")
     private LocalDate lastUpdate;
+    @OneToMany(mappedBy = "actorByActorId")
+    private Collection<FilmActorEntity> filmActorsByActorId;
 
     public Integer getActorId() {
         return actorId;
@@ -58,12 +60,20 @@ public class ActorEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ActorEntity that = (ActorEntity) o;
-        return Objects.equals(actorId, that.actorId) && Objects.equals(firstName, that.firstName) && Objects.equals(lastName, that.lastName) && Objects.equals(lastUpdate, that.lastUpdate);
+        ActorEntity actor = (ActorEntity) o;
+        return Objects.equals(actorId, actor.actorId) && Objects.equals(firstName, actor.firstName) && Objects.equals(lastName, actor.lastName) && Objects.equals(lastUpdate, actor.lastUpdate);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(actorId, firstName, lastName, lastUpdate);
+    }
+
+    public Collection<FilmActorEntity> getFilmActorsByActorId() {
+        return filmActorsByActorId;
+    }
+
+    public void setFilmActorsByActorId(Collection<FilmActorEntity> filmActorsByActorId) {
+        this.filmActorsByActorId = filmActorsByActorId;
     }
 }

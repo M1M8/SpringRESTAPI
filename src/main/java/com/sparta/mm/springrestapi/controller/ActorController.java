@@ -1,8 +1,8 @@
 package com.sparta.mm.springrestapi.controller;
 
 import com.sparta.mm.springrestapi.assembler.ActorEntityAssembler;
-import com.sparta.mm.springrestapi.exceptions.ActorNotFoundException;
 import com.sparta.mm.springrestapi.entities.ActorEntity;
+import com.sparta.mm.springrestapi.exceptions.ActorNotFoundException;
 import com.sparta.mm.springrestapi.repositories.ActorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
